@@ -1,55 +1,58 @@
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
-public class Parser : MonoBehaviour
+public class Parser : LevelGenerator
 {
-    public TextAsset fileAsset; // Attach file
-
-    private void Start()
+    void Start()
     {
-        if (fileAsset != null)
+        string filePath = "Assets/InstantiateInfo.txt";
+        string[] lines = File.ReadAllLines(filePath);
+
+        if (lines.Length < 1)
         {
-            string[] lines = fileAsset.text.Split('\n');
-            int height = int.Parse(lines[0].Split(' ')[0]);
-            int width = int.Parse(lines[0].Split(' ')[1]);
+            Debug.LogError("File is empty.");
+            return;
+        }
 
-            Debug.Log($"Height: {height}, Width: {width}");
+        string[] dimensions = lines[0].Split(' ');
+        if (dimensions.Length != 4)
+        {
+            Debug.LogError("Invalid format in the first line: " + lines[0]);
+            return;
+        }
 
-            // Parse the 2D matrix
-            int[,] matrix = new int[height, width];
-            for (int i = 0; i < height; i++)
+        int w = int.Parse(dimensions[0]);
+        int h = int.Parse(dimensions[1]);
+        int x = int.Parse(dimensions[2]);
+        int y = int.Parse(dimensions[3]);
+
+        Regex regex = new Regex(@"(\d+)\s+(\d+)\s+\(([\d.]+),\s+([\d.]+),\s+([\d.]+)\)\s+(\d+)");
+        
+        for (int i = 1; i < lines.Length; i++)
+        {
+            string line = lines[i];
+            Match match = regex.Match(line);
+
+            if (!match.Success)
             {
-                string[] row = lines[i + 1].Split(' ');
-                for (int j = 0; j < width; j++)
-                {
-                    matrix[i, j] = int.Parse(row[j]);
-                }
+                Debug.LogError("Invalid format in line " + (i + 1) + ": " + line);
+                continue;
             }
 
-            // Parse start location
-            string[] startCoords = lines[height + 1].Split(' ');
-            int startX = int.Parse(startCoords[0]);
-            int startY = int.Parse(startCoords[1]);
+            int wx = int.Parse(match.Groups[1].Value);
+            int wy = int.Parse(match.Groups[2].Value);
+            float shX = float.Parse(match.Groups[3].Value);
+            float shY = float.Parse(match.Groups[4].Value);
+            float shZ = float.Parse(match.Groups[5].Value);
+            float ang = float.Parse(match.Groups[6].Value);
 
-            // Parse ball locations
-            for (int i = height + 2; i < lines.Length - 1; i++)
-            {
-                string[] ballData = lines[i].Split(')');
-                string[] ballStart = ballData[0].Trim('(', ' ').Split(',');
-                string[] ballEnd = ballData[1].Trim('(', ' ').Split(',');
+            Vector3 sh = new Vector3(shX, shY, shZ);
 
-                int ballStartX = int.Parse(ballStart[0]);
-                int ballStartY = int.Parse(ballStart[1]);
-                int ballEndX = int.Parse(ballEnd[0]);
-                int ballEndY = int.Parse(ballEnd[1]);
-
-                Debug.Log($"Ball's location: ({ballStartX}, {ballStartY}), Hole's location: ({ballEndX}, {ballEndY})");
-            }
+            // Instantiate walls using the parsed information
+            Instantiate(Wall, new Vector3(wx, wy) - sh / 2, Quaternion.Euler(0, 0, ang), Level);
         }
-        else
-        {
-            Debug.LogError("assign the file fucker");
-        }
+        cam.m_Lens.OrthographicSize = Mathf.Pow(w / 3 + h / 2, 0.7f) + 1;
     }
 }
