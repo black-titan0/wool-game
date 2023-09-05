@@ -23,10 +23,10 @@ public class Parser : LevelGenerator
             return;
         }
 
-        int w = int.Parse(dimensions[0]);
-        int h = int.Parse(dimensions[1]);
-        int x = int.Parse(dimensions[2]);
-        int y = int.Parse(dimensions[3]);
+        w = int.Parse(dimensions[0]);
+        h = int.Parse(dimensions[1]);
+        x = int.Parse(dimensions[2]);
+        y = int.Parse(dimensions[3]);
 
         Regex regex = new Regex(@"(\d+)\s+(\d+)\s+\(([\d.]+),\s+([\d.]+),\s+([\d.]+)\)\s+(\d+)");
         
